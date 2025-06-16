@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Piyush A2Z Mail</title>
+<style>body{background:#101010;color:#eee;font-family:Arial;text-align:center;padding:20px}#email{font-size:1.4rem;margin:20px}.mail{background:#222;padding:12px;margin:10px auto;border-radius:6px;width:90%;text-align:left}button{margin:10px;padding:8px 16px}</style></head>
+<body>
+<h1>Piyush A2Z Temporary Mail</h1><p id="email">Generating email…</p><button onclick="loadMails()">Check Inbox</button><div id="inbox"></div>
+<script>
+let token="", email="", password="";
+async function createAccount(){
+  password=Math.random().toString(36).substring(2,10);
+  let d=await fetch('/api/domains').then(r=>r.json());
+  let domain=d['hydra:member'][0].domain;
+  email=Math.random().toString(36).substring(2,10)+'@'+domain;
+  document.getElementById('email').innerText='📧 '+email;
+  await fetch('/api/accounts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:email,password})});
+  let tok=await fetch('/api/token',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:email,password})}).then(r=>r.json());
+  token=tok.token;
+  loadMails();
+}
+async function loadMails(){
+  let inboxEl=document.getElementById('inbox');
+  inboxEl.innerText='Checking…';
+  let data=await fetch('/api/messages',{headers:{authorization:'Bearer '+token}}).then(r=>r.json());
+  if(!data['hydra:member'] || data['hydra:member'].length===0){ inboxEl.innerHTML='<p>No mails yet.</p>'; return; }
+  inboxEl.innerHTML=data['hydra:member'].map(m=>`<div class="mail"><b>From:</b> ${m.from.address}<br><b>Subject:</b> ${m.subject}</div>`).join('');
+}
+createAccount();
+</script>
+</body>
+</html>
